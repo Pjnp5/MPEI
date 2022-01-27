@@ -1,0 +1,45 @@
+%% a)
+T = [0.8 0   0 0.3 0
+     0.2 0.6 0 0.2 0
+     0   0.3 1 0   0
+     0   0.1 0 0.4 0
+     0   0   0 0.1 1];
+%% b)
+N = 100;
+P12 = zeros(1, N);
+V = [1 0 0 0 0];
+
+for n = 1:N
+    T = T^n;
+    P12(n) =T(2,1);
+end
+
+%plot(1:N, P12)
+
+%% c)
+N = 100;
+P13 = zeros(1, N);
+V = [1 0 0 0 0];
+
+for n = 1:N
+    P13(n) = P12(n) * T(3,2);
+end
+
+plot(1:N, P13)
+
+%% d)
+nena = 3;
+Q = T(1:nena, 1:nena);
+
+
+%% e)
+
+F = inv(eye(size(Q)) - Q);
+
+%% f)
+
+r1 = passos(1);
+r2 = passos(2);
+r3 = passos(3); % É o estado 4, mas corresponde á posição 3 da matriz
+
+%% g)

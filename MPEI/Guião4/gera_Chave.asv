@@ -1,0 +1,8 @@
+function [] = gera_Chave(N, i_min, i_max, n_letras, prob_letra)
+    if ~(prob_letra)
+        prob_letra = 1/n_letras;
+    end
+    for i = 1:N
+        l = randi()
+end
+

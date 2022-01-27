@@ -1,0 +1,7 @@
+% Prob de haver um erro numa pag de um livro é 0.02
+lambda = 0.02;
+% numero max de erros em 100 pag
+n_pags = 100;
+max_erros = 1;
+
+prob_de_maximo

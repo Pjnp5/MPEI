@@ -1,0 +1,80 @@
+%Ex 6. 
+clear all;
+clf;
+close;
+
+% A cada 1000 chips 1 é defeituos, logo prob de ser defeituoso = 1/1000
+
+%Amostra de 8000 -> n
+%B : "# de chips defeituosas que aparecem numa amostra com 8000 chips"
+
+% Podemos considerar que B apresenta as caracteristicas de uma Distribuicao Binomial
+%visto que se trata da repeticao da experiencia de Bernoulli onde sucesso ocorre quando
+%aparece um chip defeituoso e insucesso quando aparece um chip que nao tem defeitos
+
+%Sabemos portanto que:
+%pB(k) = nCk * p^k * (1-p)^(n-k) = n! / (k! * (n-k)!) * p^k * (1-p)^(n-k)
+
+%Queremos a probabilidade de em 8000 chips 7 serem defeituosos
+
+n = 8000;   % # de amostras
+p = 1/1000; % prob de aparecer um chip com defeito
+k = 7;      % # de chips com defeito que queremos que aparecam
+
+%nCk = factorial(8000)/(factorial(7) * factorial(8000-7));
+
+%pB7 = nCk * p^k * (1-p)^(n-k);
+
+nCk = prod(n:-1:n-k+1)/prod(1:k);
+pB7T = nCk * p^k * (1-p)^(n-k);
+
+disp("Usando a binomial:");
+fprintf("P(7 defeituosos em 8000) = %f \n",pB7T);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+disp("Por Lei de Poisson: ")
+
+%Por Poisson:
+%pk = a^k/k! * e^-alfa ; onde a = media = n * p
+
+
+m = 8 ; %media = (8000 * 1/1000) = 8 
+k = 7 ;
+
+pB7P = leiPoisson(m,k);
+fprintf("P(7 defeituosos em 8000) = %f \n",pB7P);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% Graficos: (pedido na aula)
+figure(1);
+hold on;
+
+pBT = zeros(1,51);
+for k=0 : 50
+  nCk = prod(n:-1:n-k+1)/prod(1:k);
+  pBT(k+1) = nCk * p^k * (1-p)^(n-k);
+end
+
+x = 0:50;
+stem(x,pBT,'x');
+
+axis([-0.5 51 0 0.2]);
+xlabel('x');
+ylabel('pX');
+title("Grafico Funcao de Probabilidade de B");
+
+pBS = zeros(1,51);
+for k=0 : 50
+  pBS(k+1) = leiPoisson(m,k);
+end
+
+stem(x,pBS,'o');
+
+hold off;
+
