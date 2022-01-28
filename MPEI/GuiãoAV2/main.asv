@@ -1,0 +1,53 @@
+clc;
+clear all;
+
+load data;
+
+user = 0;
+option = 0;
+Nu = 1000;
+
+while(isempty(option) || option < 5 || user == 0)
+    clc;
+    if (user == 0)
+        user = str2num(input(['Insert User ID (1 to ' num2str(Nu) '): '], 's'));        
+    elseif (isempty(user) || user< 1 || user>Nu)
+        fprintf(2, 'User ID not valid.');
+        fprintf(2, '\nPress any key to use another ID. ');
+        pause; clc;  % Manter a informação disponível até ao utilizador pressionar uma tecla
+        user = 0;
+    else
+        fprintf('\nUser ID: %d\nMenu', user);
+        fprintf('\n1 - Your Friends\n2 - Interests from most similar user\n3 - Search Name\n4 - Find most similar users based in list of interests \n5 - Exit\nSelect choice: ');
+        option = str2num(input('', 's'));
+        if isempty(option)
+            continue;
+        end 
+        switch option
+                case 1
+                    YourFriends(user, friends, dic);
+        %%        case 2
+        %%            Interests();
+        %%        case 3
+        %%            searchName();
+        %%        case 4
+        %%            FindMostSimilarUser();
+        %%        case 5
+        %%            clc
+        %%            break
+                otherwise
+                    option = 0;
+                    clc
+        end
+    end
+end
+
+function YourFriends(user, friends, dic)
+    fprintf('\nYour  friends:\n');
+    friends{user}(1)
+    for i = 1:length(friends{user})
+        fprintf('%d - %s\n', i, dic{friends{user}(i),2});
+    end
+    fprintf(2, 'Press key to continue. ');
+    pause; clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla
+end
