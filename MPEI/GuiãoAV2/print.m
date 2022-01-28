@@ -1,1 +1,0 @@
-fprintf("A tua mãe");
