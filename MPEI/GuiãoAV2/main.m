@@ -28,8 +28,8 @@ while(isempty(option) || option < 5 || user == 0)
                 YourFriends(user, friends, dic);
             case 2
                 Interests(Nu, MinHashInt, user, dic);
-%                 case 3
-%                     searchName(dic,);
+            case 3
+                SearchName(Nu, dic, MinHashSearch);
         %        case 4
         %            FindMostSimilarUser();
             case 5
@@ -58,7 +58,7 @@ function Interests(Nu, MinHashInt, user, dic)
     for n = 1:Nu
         waitbar(n/Nu, h);
         if n ~= user
-            J(n) = 1 - sum(MinHashInt(n,:) ~= MinHashInt(user,:))/K;  % Calculamos a distancia de Jaccard para todos os pares possiveis desse user
+            J(n) = 1 - sum(MinHashInt(n,:) == MinHashInt(user,:))/K;  % Calculamos a distancia de Jaccard para todos os pares possiveis desse user
         end
     end
     delete(h);
@@ -95,54 +95,59 @@ function Interests(Nu, MinHashInt, user, dic)
     pause;clc;
 end
 
-% function searchName(dic, MinHashSearch)
-%     str = lower(input('\nNome a pesquisar: ', 's'));
-%     shingle_size = 3;  % Utilizar o mesmo numero de shingles que na database
-%     K = size(MinHashSearch, 2);  % Usar o K igual ao K utilizado na base de dados para os shingles dos titulos
-%     threshold = 0.99;  % Definir um threshold que nos é dado
-% 
-%     % Cell array com os shingles da string introduzida
-%     shinglesAns = {};
-%     for i = 1:length(str) - shingle_size+1
-%         shingle = str(i:i+shingle_size-1);
-%         shinglesAns{i} = shingle;
-%     end
-% 
-%     % Fazer a MinHash dos shingles da string introduzida
-%     MinHashString = inf(1,K);
-%     for j = 1:length(shinglesAns)
-%         chave = char(shinglesAns{j});
-%         hash = zeros(1,K);
-%         for kk = 1:K
-%             chave = [chave num2str(kk)];
-%             hash(kk) = DJB31MA(chave, 127);
-%         end
-%         MinHashString(1,:) = min([MinHashString(1,:); hash]);
-%     end
-% 
-%     % Distancia de Jaccard entre a string e cada pessoa
-%     distJ = ones(1, size(dic,1));  % array para guardar distancias
-%     h = waitbar(0,'Calculating');
-%     for i=1:size(dic, 1)  % cada hashcode da string
-%         waitbar(i/K, h);
-%         distJ(i) = sum(MinHashSearch(i,:) ~= MinHashString)/K;
-%     end
-%     delete(h);
-%     
-%     ctrl = false;  % controlo para saber se houve algum nome encontrado com uma distancia menor ou igual a threshold
-%     for i = 1:5
-%         [val, pos] = min(distJ);  % Calcular o valor minimo (mais similaridade)
-%         if (val <= threshold)  % Se o valor minimo já nao pretencer ao threshold não dá print
-%             ctrl = true;
-%             fprintf('%s   (%f)\n', dic{pos, 1}, val);
-%         end
-%         distJ(pos) = 1;  % Retirar esse filme dando uma distancia igual a 1
-%     end
-%     
-%     if (~ctrl)
-%         fprintf('No names found.\n');
-%     end
-%     fprintf(2, 'Press any key to continue. ');
-%     pause;clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla  
-% end
+function SearchName(Nu, dic, MinHashSearch)
+    search = lower(input('\nWrite a string: ', 's'));
+    shingle_size = 4;  % Utilizar o mesmo numero de shingles que na database
+    K = 150;  % Usar o K igual ao K utilizado na base de dados para os shingles
+    threshold = 0.8;  % Definir um threshold que nos é dado
+
+    % Cell array com os shingles da string introduzida
+    shinglesAns = {};
+    for i = 1:length(search) - shingle_size + 1
+        shingle = search(i:i + shingle_size - 1);
+        shinglesAns{i} = shingle;
+    end
+
+    % Fazer a MinHash dos shingles da string introduzida
+    MinHashString = inf(1,K);
+    for j = 1:length(shinglesAns)
+        chave = char(shinglesAns{j});
+        hash = zeros(1,K);
+        for kk = 1:K
+            chave = [chave num2str(kk)];
+            hash(kk) = DJB31MA(chave, 127);
+        end
+        MinHashString(1,:) = min([MinHashString(1,:); hash]);
+    end
+
+    % Distancia de Jaccard entre a string e cada pessoa
+    J = ones(1, Nu);  % array para guardar distancias
+    SimilarNames = {};
+    JaccardDistances = {};
+    k = 0;
+    h = waitbar(0,'Calculating');
+    for i = 1:Nu  % cada hashcode da string
+        waitbar(i/K, h);
+        J(i) = 1 - sum(MinHashSearch(i,:) == MinHashString)/K;
+        if (J(i) <= threshold)
+            k = k + 1;  % número de nomes obtidos
+            SimilarNames{k} = [dic{i,2} ' ' dic{i,3}];
+            JaccardDistances{k} = J(i);
+        end
+    end
+    delete(h);
+
+    JaccardDistances = cell2mat(JaccardDistances);
+    [JaccardDistances, index] = sort(JaccardDistances);
+
+    if (k == 0)
+        fprintf('\nNo results found.\n');
+    else 
+        for h = 1 : 7
+            fprintf('%s - %.3f\n', SimilarNames{index(h)}, JaccardDistances(h));
+        end
+    end
+    fprintf(2, 'Press any key to continue. ');
+    pause;clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla  
+end
     
