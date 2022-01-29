@@ -5,7 +5,7 @@ amigos = load('amigos.txt');
 a = amigos(:, 1:2);
 clear amigos;
 users = unique(a(:, 1));
-Nu = length(users);
+Nu = length(users); 
 
 friends = cell(Nu, 1); % Usa celulas
 for n = 1:Nu % Para cada utilizador
@@ -14,6 +14,7 @@ for n = 1:Nu % Para cada utilizador
     friends{n} = [friends{n} a(ind, 2)];
 end
 %clear a
+
 K = 100;  % Número de funções de dispersão
 MinHashValue = inf(Nu, K);
 for i = 1:Nu
@@ -23,10 +24,11 @@ for i = 1:Nu
         hash = zeros(1,K);
         for kk = 1:K
             chave = [chave num2str(kk)];
-            hash(kk) = DJB31MA(chave,127);
+            hash(kk) = DJB31MA(chave, 0);
         end
         MinHashValue(i,:) = min([MinHashValue(i,:); hash]);  % Valor minimo da hash para este título
     end
+end
 
 shingle_size = 3;
 K = 150;  % Número de funções de dispersão
