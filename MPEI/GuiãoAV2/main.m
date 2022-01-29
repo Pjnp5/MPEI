@@ -27,7 +27,7 @@ while(isempty(option) || option < 5 || user == 0)
             case 1
                 YourFriends(user, friends, dic);
             case 2
-                Interests(Nu, MinHashValue, user, friends, dic);
+                Interests(Nu, MinHashInt, user, dic);
 %                 case 3
 %                     searchName(dic,);
         %        case 4
@@ -51,45 +51,54 @@ function YourFriends(user, friends, dic)
     pause; clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla
 end
 
-function Interests(Nu, MinHashValue, user, friends, dic)                    
+function Interests(Nu, MinHashInt, user, dic)                    
     K = 100;  % Usamos o mesmo número de funcoes de dispersão usados para a MinHash na database
     J = ones(1, Nu); % array para guardar distâncias
-    Nfriends = length(friends{user});
-    %h = waitbar(0, 'Calculating');
-    for n = 1:Nfriends
-        %waitbar(n/Nfriends, h);
-        J(n) = sum(MinHashValue(dic{friends{user}(n), 1},:) == MinHashValue(dic{user, 1},:))/K  % Calculamos a distancia de Jaccard para todos os pares possiveis desse user
-    end
-    %delete(h);
-    [val, SimilarUserId] = min(J);
-    fprintf('\nSugestions:\n');
-    pause; clc;
-    
-    suggestions = [];
-    for n = 1:length(friends{SimilarUserId})
-        % Se o similarUser tiver algum filme vistos que o user nao viu, e
-        % for da categoria escolhida, esse é um filme que vai ser sugerido
-        if (~ismember(Set{SimilarUserId}(n), Set{user}) && dic{Set{SimilarUserId}(n), type} == 1)
-            suggestions = [suggestions string(dic{Set{SimilarUserId}(n), 1})];
+    h = waitbar(0, 'Calculating');
+    for n = 1:Nu
+        waitbar(n/Nu, h);
+        if n ~= user
+            J(n) = 1 - sum(MinHashInt(n,:) ~= MinHashInt(user,:))/K;  % Calculamos a distancia de Jaccard para todos os pares possiveis desse user
         end
     end
+    delete(h);
+    [val, SimilarUserId] = min(J);
+
+    UserInterests = [];
+    i = 5;
+    while isa(dic{user, i}, 'char')
+        UserInterests = [UserInterests string(dic{user, i})];
+        i = i + 1;
+    end
+
+    fprintf('\nYour most similar user is:\n%d - %s %s\n', dic{SimilarUserId,1}, dic{SimilarUserId,2}, dic{SimilarUserId,3});
+    fprintf('\nAnd his/her interests are:\n');
+    SimilarUserInterests = [];
+    ind = 5;
+    while isa(dic{SimilarUserId, ind}, 'char')
+        SimilarUserInterests = [SimilarUserInterests string(dic{SimilarUserId, ind})];
+        fprintf('%s\n', dic{SimilarUserId, ind});
+        ind = ind + 1;  
+    end
+
+    Suggestions = setdiff(SimilarUserInterests, UserInterests);
     
-    if isempty(suggestions)  % Se nao houver sugestoes
-        fprintf('\nThere is no film suggestions.\n');
+    if isempty(Suggestions)  % Se nao houver sugestoes
+        fprintf('\nThere are no new suggestions.\n');
     else
-       fprintf('\nFilm Suggestions:\n');
-       for i = 1:length(suggestions)  % Display dos filmes sugeridos
-           fprintf(suggestions(i) + '\n');
+       fprintf('\nSuggestions for you:\n');
+       for i = 1:length(Suggestions)  % Display dos filmes sugeridos
+           fprintf('%s\n', Suggestions(i));
        end
     end
     fprintf(2, 'Press any key to continue. ');
-    pause;clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla
+    pause;clc;
 end
 
-% function searchName(dic, MinHashSig)
+% function searchName(dic, MinHashSearch)
 %     str = lower(input('\nNome a pesquisar: ', 's'));
 %     shingle_size = 3;  % Utilizar o mesmo numero de shingles que na database
-%     K = size(MinHashSig, 2);  % Usar o K igual ao K utilizado na base de dados para os shingles dos titulos
+%     K = size(MinHashSearch, 2);  % Usar o K igual ao K utilizado na base de dados para os shingles dos titulos
 %     threshold = 0.99;  % Definir um threshold que nos é dado
 % 
 %     % Cell array com os shingles da string introduzida
@@ -116,7 +125,7 @@ end
 %     h = waitbar(0,'Calculating');
 %     for i=1:size(dic, 1)  % cada hashcode da string
 %         waitbar(i/K, h);
-%         distJ(i) = sum(MinHashSig(i,:) ~= MinHashString)/K;
+%         distJ(i) = sum(MinHashSearch(i,:) ~= MinHashString)/K;
 %     end
 %     delete(h);
 %     

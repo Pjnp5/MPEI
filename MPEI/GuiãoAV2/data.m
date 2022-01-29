@@ -13,31 +13,33 @@ for n = 1:Nu % Para cada utilizador
     ind = find(a(:, 1) == users(n));
     friends{n} = [friends{n} a(ind, 2)];
 end
-%clear a
+clear a;
 
 K = 100;  % Número de funções de dispersão
-MinHashValue = inf(Nu, K);
+MinHashInt = inf(Nu, K);
 for i = 1:Nu
-    conjunto = friends{i}; 
+    conjunto = friends{i};                      % conjunto dos amigos do user
+    idades = zeros(length(conjunto), 1);        % idades dos amigos
     for j = 1:length(conjunto)
-        chave = char(conjunto(j));
+        idades(j) = dic{conjunto(j), 4};        % idade do j
+        chave = char(idades(j));
         hash = zeros(1,K);
         for kk = 1:K
             chave = [chave num2str(kk)];
-            hash(kk) = DJB31MA(chave, 0);
+            hash(kk) = DJB31MA(chave, 127);
         end
-        MinHashValue(i,:) = min([MinHashValue(i,:); hash]);  % Valor minimo da hash para este título
+        MinHashInt(i,:) = min([MinHashInt(i,:); hash]);  % Valor minimo da hash para este título
     end
 end
 
-shingle_size = 3;
+shingle_size = 4;
 K = 150;  % Número de funções de dispersão
-MinHashSig = inf(length(friends),K);
-for i = 1:length(friends)
-    conjunto = lower(friends{i,1});
+MinHashSearch = inf(Nu,K);
+for i = 1:Nu
+    nome = lower([dic{i,2} ' ' dic{i,3}]);
     shingles = {};
-    for j = 1 : length(conjunto) - shingle_size+1  % Criacao dos shingles para cada filme
-        shingle = conjunto(j:j+shingle_size-1);
+    for j = 1 : length(nome) - shingle_size + 1  % Criacao dos shingles para cada filme
+        shingle = nome(j:j + shingle_size - 1);
         shingles{j} = shingle;
     end
     
@@ -46,10 +48,10 @@ for i = 1:length(friends)
         hash = zeros(1,K);
         for kk = 1:K
             chave = [chave num2str(kk)];
-            hash(kk) = DJB31MA(chave,127);
+            hash(kk) = DJB31MA(chave, 127);
         end
-        MinHashSig(i,:) = min([MinHashSig(i,:);hash]);  % Valor minimo da hash para este shingle
+        MinHashSearch(i,:) = min([MinHashSearch(i,:);hash]);  % Valor minimo da hash para este shingle
     end
 end
 
-save 'data' 'dic' 'Nu' 'users' 'friends'
+save 'data' 'dic' 'Nu' 'users' 'friends' 'MinHashInt' 'MinHashSearch'
