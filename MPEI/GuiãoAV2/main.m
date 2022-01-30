@@ -5,60 +5,65 @@ load data;
 
 user = 0;
 option = 0;
-Nu = 1000;
 
-while(isempty(option) || option < 5 || user == 0)
-    %clc;
-    if (user == 0)
-        user = str2num(input(['Insert User ID (1 to ' num2str(Nu) '): '], 's'));        
-    elseif (isempty(user) || user< 1 || user>Nu)
-        fprintf(2, 'User ID not valid.');
-        fprintf(2, '\nPress any key to use another ID. ');
-        pause; clc;  % Manter a informação disponível até ao utilizador pressionar uma tecla
-        user = 0;
-    else
-        fprintf('\nUser ID: %d\nMenu', user);
-        fprintf('\n1 - Your Friends\n2 - Interests from most similar user\n3 - Search Name\n4 - Find most similar users based in list of interests \n5 - Exit\nSelect choice: ');
-        option = str2num(input('', 's'));
-        if isempty(option)
-            continue;
-        end 
-        switch option
-            case 1
-                YourFriends(user, friends, dic);
-            case 2
-                Interests(Nu, MinHashInt, user, dic);
-            case 3
-                SearchName(Nu, dic, MinHashSearch);
-        %        case 4
-        %            FindMostSimilarUser();
-            case 5
-                clc;
-                break;
-            otherwise
-                option = 0;
-                clc;
+menu(user, option, Nu, dic, friends, MinHashInt, MinHashSearch, B, MinHashSim);
+
+function menu(user, option, Nu, dic, friends, MinHashInt, MinHashSearch, B, MinHashSim)
+    while(isempty(option) || option < 5 || user == 0)
+        clc;
+        if (user == 0)
+            user = str2num(input(['Insert User ID (1 to ' num2str(Nu) '): '], 's'));        
+        elseif (isempty(user) || user <  1 || user > Nu)
+            fprintf(2, 'User ID not valid.');
+            fprintf(2, '\nPress any key to use another ID. ');
+            pause; clc;  
+            user = 0;
+        else
+            fprintf('\nUser ID: %d\nMenu', user);
+            fprintf(['\n1 - Your Friends\n2 - Interests from most similar user\n3 - Search Name\n' ...
+                '4 - Find most similar users based in list of interests \n5 - Exit\nSelect choice: ']);
+            option = str2num(input('', 's'));
+            if isempty(option)
+                continue;
+            end 
+            switch option
+                case 1
+                    YourFriends(user, friends, dic);
+                case 2
+                    Interests(Nu, MinHashInt, user, dic);
+                case 3
+                    SearchName(Nu, dic, MinHashSearch, B);
+                case 4
+                    FindMostSimilarUser(Nu, user, friends, dic, MinHashSim);
+                case 5
+                    clc;
+                    break;
+                otherwise
+                    option = 0;
+                    clc;
+            end
         end
     end
 end
 
+
 function YourFriends(user, friends, dic)
     fprintf('\nYour  friends:\n');
     for i = 1:length(friends{user})
-        fprintf('%d - %s %s\n', dic{friends{user}(i),1}, dic{friends{user}(i),2}, dic{friends{user}(i),3});
+        fprintf('%4d - %s %s\n', dic{friends{user}(i),1}, dic{friends{user}(i),2}, dic{friends{user}(i),3});
     end
     fprintf(2, 'Press key to continue. ');
-    pause; clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla
+    pause; clc;
 end
 
 function Interests(Nu, MinHashInt, user, dic)                    
-    K = 100;  % Usamos o mesmo número de funcoes de dispersão usados para a MinHash na database
-    J = ones(1, Nu); % array para guardar distâncias
+    K = 100;
+    J = ones(1, Nu);
     h = waitbar(0, 'Calculating');
     for n = 1:Nu
         waitbar(n/Nu, h);
         if n ~= user
-            J(n) = 1 - sum(MinHashInt(n,:) == MinHashInt(user,:))/K;  % Calculamos a distancia de Jaccard para todos os pares possiveis desse user
+            J(n) = 1 - sum(MinHashInt(n,:) == MinHashInt(user,:))/K;
         end
     end
     delete(h);
@@ -66,7 +71,7 @@ function Interests(Nu, MinHashInt, user, dic)
 
     UserInterests = [];
     i = 5;
-    while isa(dic{user, i}, 'char')
+    while (i <= 19 && isa(dic{user, i}, 'char'))
         UserInterests = [UserInterests string(dic{user, i})];
         i = i + 1;
     end
@@ -75,7 +80,7 @@ function Interests(Nu, MinHashInt, user, dic)
     fprintf('\nAnd his/her interests are:\n');
     SimilarUserInterests = [];
     ind = 5;
-    while isa(dic{SimilarUserId, ind}, 'char')
+    while (ind <= 19 && isa(dic{SimilarUserId, ind}, 'char'))
         SimilarUserInterests = [SimilarUserInterests string(dic{SimilarUserId, ind})];
         fprintf('%s\n', dic{SimilarUserId, ind});
         ind = ind + 1;  
@@ -83,11 +88,11 @@ function Interests(Nu, MinHashInt, user, dic)
 
     Suggestions = setdiff(SimilarUserInterests, UserInterests);
     
-    if isempty(Suggestions)  % Se nao houver sugestoes
+    if isempty(Suggestions) 
         fprintf('\nThere are no new suggestions.\n');
     else
        fprintf('\nSuggestions for you:\n');
-       for i = 1:length(Suggestions)  % Display dos filmes sugeridos
+       for i = 1:length(Suggestions)
            fprintf('%s\n', Suggestions(i));
        end
     end
@@ -95,59 +100,98 @@ function Interests(Nu, MinHashInt, user, dic)
     pause;clc;
 end
 
-function SearchName(Nu, dic, MinHashSearch)
+function SearchName(Nu, dic, MinHashSearch, B)
     search = lower(input('\nWrite a string: ', 's'));
-    shingle_size = 4;  % Utilizar o mesmo numero de shingles que na database
-    K = 150;  % Usar o K igual ao K utilizado na base de dados para os shingles
-    threshold = 0.8;  % Definir um threshold que nos é dado
-
-    % Cell array com os shingles da string introduzida
+    f = 6;
+    % Verificar se o input está no filtro de bloom
+    if BloomFilterVerify(search, B, f)
+        fprintf('\nThe inserted string is very likely to correspond to a user name.\n');
+    end
+    shingle_size = 3;
+    K = 100; 
+    threshold = 0.8;
+    % Cell array com os shingles do input
     shinglesAns = {};
     for i = 1:length(search) - shingle_size + 1
         shingle = search(i:i + shingle_size - 1);
         shinglesAns{i} = shingle;
     end
-
-    % Fazer a MinHash dos shingles da string introduzida
+    % MinHash dos shingles do input
     MinHashString = inf(1,K);
     for j = 1:length(shinglesAns)
         chave = char(shinglesAns{j});
         hash = zeros(1,K);
-        for kk = 1:K
-            chave = [chave num2str(kk)];
-            hash(kk) = DJB31MA(chave, 127);
+        for y = 1:K
+            chave = [chave num2str(y)];
+            hash(y) = DJB31MA(chave, 127);
         end
         MinHashString(1,:) = min([MinHashString(1,:); hash]);
     end
-
-    % Distancia de Jaccard entre a string e cada pessoa
-    J = ones(1, Nu);  % array para guardar distancias
+    % Distancia de Jaccard
+    J = ones(1, Nu);
     SimilarNames = {};
     JaccardDistances = {};
-    k = 0;
+    w = 0;
     h = waitbar(0,'Calculating');
     for i = 1:Nu  % cada hashcode da string
         waitbar(i/K, h);
-        J(i) = 1 - sum(MinHashSearch(i,:) == MinHashString)/K;
+        J(i) = 1 - sum(MinHashSearch(i,:) == MinHashString(1,:))/K;
         if (J(i) <= threshold)
-            k = k + 1;  % número de nomes obtidos
-            SimilarNames{k} = [dic{i,2} ' ' dic{i,3}];
-            JaccardDistances{k} = J(i);
+            w = w + 1;  % número de nomes obtidos
+            SimilarNames{w} = [dic{i,2} ' ' dic{i,3}];
+            JaccardDistances{w} = J(i);
         end
     end
     delete(h);
-
     JaccardDistances = cell2mat(JaccardDistances);
     [JaccardDistances, index] = sort(JaccardDistances);
-
-    if (k == 0)
+    if (w == 0)
         fprintf('\nNo results found.\n');
     else 
-        for h = 1 : 7
+        for h = 1 : w
             fprintf('%s - %.3f\n', SimilarNames{index(h)}, JaccardDistances(h));
         end
     end
     fprintf(2, 'Press any key to continue. ');
-    pause;clc;  % Manter a informação disponível até ao utilizador pressionar em qualquer tecla  
+    pause;clc; 
 end
+
+function FindMostSimilarUser(Nu, user, friends, dic, MinHashSim)
+    fprintf('\n');
+    for i = 1:length(friends{user})
+        fprintf('%4d - %s %s\n', dic{friends{user}(i),1}, dic{friends{user}(i),2}, dic{friends{user}(i),3});
+    end
+    Id = str2double(input('\nSelect one of your friends: ', 's'));
+
+    K = 100;  
+    J = ones(1, Nu); 
+    h = waitbar(0, 'Calculating');
+    for n = 1:Nu
+        waitbar(n/Nu, h);
+        if n ~= Id
+            J(n) = 1 - sum(MinHashSim(n,:) == MinHashSim(Id,:))/K;
+        end
+    end
+    delete(h);
+    for m = 1:3
+        [val, SimilarId] = min(J);
+        fprintf('%4d - %s %s\n', dic{SimilarId, 1}, dic{SimilarId, 2}, dic{SimilarId, 3});
+        J(SimilarId) = 1;
+    end 
+    fprintf(2, 'Press any key to continue. ');
+    pause;clc;
+end
+
+function p = BloomFilterVerify(elem, B, f)
+    n = length(B);
     
+    for i = 1:f
+        elem = [elem num2str(i)]; 
+        hcode = hashstring(elem, n);
+        hcode = mod(hcode, n);
+        p = 1;
+        if B(hcode + 1) ~= 1
+            p = 0;
+        end
+    end
+end 
